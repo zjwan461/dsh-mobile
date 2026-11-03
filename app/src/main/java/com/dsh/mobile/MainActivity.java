@@ -541,13 +541,6 @@ public class MainActivity extends Activity {
         }
 
         @Override
-        public void onReceivedTitle(WebView view, String title) {
-            if (toolbarTitle != null && !TextUtils.isEmpty(title)) {
-                toolbarTitle.setText(title);
-            }
-        }
-
-        @Override
         public void onReceivedError(WebView view, WebResourceRequest request,
                                     WebResourceError error) {
             if (request == null || !request.isForMainFrame()) {
@@ -593,6 +586,14 @@ public class MainActivity extends Activity {
     }
 
     private final class DshChromeClient extends WebChromeClient {
+
+        // onReceivedTitle belongs to WebChromeClient, not WebViewClient.
+        @Override
+        public void onReceivedTitle(WebView view, String title) {
+            if (toolbarTitle != null && !TextUtils.isEmpty(title)) {
+                toolbarTitle.setText(title);
+            }
+        }
 
         @Override
         public void onProgressChanged(WebView view, int newProgress) {

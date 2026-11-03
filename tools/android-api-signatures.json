@@ -1,0 +1,1189 @@
+{
+ "Activity": {
+  "addContentView": [
+   2
+  ],
+  "addDumpable": [
+   1
+  ],
+  "attachBaseContext": [
+   1
+  ],
+  "canStartActivityForResult": [
+   0
+  ],
+  "cancelInputsAndStartExitTransition": [
+   1
+  ],
+  "clearOverrideActivityTransition": [
+   1
+  ],
+  "closeContextMenu": [
+   0
+  ],
+  "closeOptionsMenu": [
+   0
+  ],
+  "collectActivityLifecycleCallbacks": [
+   0
+  ],
+  "contentCaptureClientGetComponentName": [
+   0
+  ],
+  "convertFromTranslucent": [
+   0
+  ],
+  "convertFromTranslucentInternal": [
+   0
+  ],
+  "convertToTranslucent": [
+   2
+  ],
+  "createDialog": [
+   3
+  ],
+  "createPendingResult": [
+   3
+  ],
+  "deviceSupportsPictureInPictureMode": [
+   0
+  ],
+  "dismissDialog": [
+   1
+  ],
+  "dismissKeyboardShortcutsHelper": [
+   0
+  ],
+  "dispatchActivityConfigurationChanged": [
+   0
+  ],
+  "dispatchActivityCreated": [
+   1
+  ],
+  "dispatchActivityDestroyed": [
+   0
+  ],
+  "dispatchActivityPaused": [
+   0
+  ],
+  "dispatchActivityPostCreated": [
+   1
+  ],
+  "dispatchActivityPostDestroyed": [
+   0
+  ],
+  "dispatchActivityPostPaused": [
+   0
+  ],
+  "dispatchActivityPostResumed": [
+   0
+  ],
+  "dispatchActivityPostSaveInstanceState": [
+   1
+  ],
+  "dispatchActivityPostStarted": [
+   0
+  ],
+  "dispatchActivityPostStopped": [
+   0
+  ],
+  "dispatchActivityPreCreated": [
+   1
+  ],
+  "dispatchActivityPreDestroyed": [
+   0
+  ],
+  "dispatchActivityPrePaused": [
+   0
+  ],
+  "dispatchActivityPreResumed": [
+   0
+  ],
+  "dispatchActivityPreSaveInstanceState": [
+   1
+  ],
+  "dispatchActivityPreStarted": [
+   0
+  ],
+  "dispatchActivityPreStopped": [
+   0
+  ],
+  "dispatchActivityResumed": [
+   0
+  ],
+  "dispatchActivitySaveInstanceState": [
+   1
+  ],
+  "dispatchActivityStarted": [
+   0
+  ],
+  "dispatchActivityStopped": [
+   0
+  ],
+  "dispatchEnterAnimationComplete": [
+   0
+  ],
+  "dispatchGenericMotionEvent": [
+   1
+  ],
+  "dispatchKeyEvent": [
+   1
+  ],
+  "dispatchKeyShortcutEvent": [
+   1
+  ],
+  "dispatchPopulateAccessibilityEvent": [
+   1
+  ],
+  "dispatchRequestPermissionsResult": [
+   2
+  ],
+  "dispatchRequestPermissionsResultToFragment": [
+   3
+  ],
+  "dispatchTouchEvent": [
+   1
+  ],
+  "dispatchTrackballEvent": [
+   1
+  ],
+  "dump": [
+   4
+  ],
+  "dumpInternal": [
+   4
+  ],
+  "dumpLegacyDumpable": [
+   4
+  ],
+  "enableTaskLocaleOverride": [
+   0
+  ],
+  "ensureSearchManager": [
+   0
+  ],
+  "enterPictureInPictureMode": [
+   0,
+   1
+  ],
+  "findViewById": [
+   1
+  ],
+  "finish": [
+   0,
+   1
+  ],
+  "finishActivity": [
+   1
+  ],
+  "finishActivityFromChild": [
+   2
+  ],
+  "finishAffinity": [
+   0
+  ],
+  "finishAfterTransition": [
+   0
+  ],
+  "finishAndRemoveTask": [
+   0
+  ],
+  "finishFromChild": [
+   1
+  ],
+  "getActionBar": [
+   0
+  ],
+  "getActivityInfo": [
+   0
+  ],
+  "getActivityThread": [
+   0
+  ],
+  "getActivityToken": [
+   0
+  ],
+  "getApplication": [
+   0
+  ],
+  "getAssistToken": [
+   0
+  ],
+  "getAutofillClient": [
+   0
+  ],
+  "getAutofillClientController": [
+   0
+  ],
+  "getCallingActivity": [
+   0
+  ],
+  "getCallingPackage": [
+   0
+  ],
+  "getChangingConfigurations": [
+   0
+  ],
+  "getComponentName": [
+   0
+  ],
+  "getContentCaptureClient": [
+   0
+  ],
+  "getContentCaptureTypeAsString": [
+   1
+  ],
+  "getContentScene": [
+   0
+  ],
+  "getContentTransitionManager": [
+   0
+  ],
+  "getCurrentFocus": [
+   0
+  ],
+  "getFragmentManager": [
+   0
+  ],
+  "getIntent": [
+   0
+  ],
+  "getLastNonConfigurationInstance": [
+   0
+  ],
+  "getLaunchedFromPackage": [
+   0
+  ],
+  "getLaunchedFromUid": [
+   0
+  ],
+  "getLayoutInflater": [
+   0
+  ],
+  "getLoaderManager": [
+   0
+  ],
+  "getLocalClassName": [
+   0
+  ],
+  "getMaxNumPictureInPictureActions": [
+   0
+  ],
+  "getMediaController": [
+   0
+  ],
+  "getMenuInflater": [
+   0
+  ],
+  "getNextAutofillId": [
+   0
+  ],
+  "getOnBackInvokedDispatcher": [
+   0
+  ],
+  "getOrCreateSplashScreen": [
+   0
+  ],
+  "getParent": [
+   0
+  ],
+  "getParentActivityIntent": [
+   0
+  ],
+  "getPreferences": [
+   1
+  ],
+  "getReferrer": [
+   0
+  ],
+  "getRequestedOrientation": [
+   0
+  ],
+  "getSearchEvent": [
+   0
+  ],
+  "getShareableActivityToken": [
+   0
+  ],
+  "getSplashScreen": [
+   0
+  ],
+  "getSystemService": [
+   1
+  ],
+  "getTaskId": [
+   0
+  ],
+  "getTitle": [
+   0
+  ],
+  "getTitleColor": [
+   0
+  ],
+  "getVoiceInteractor": [
+   0
+  ],
+  "getVolumeControlStream": [
+   0
+  ],
+  "getWindow": [
+   0
+  ],
+  "getWindowManager": [
+   0
+  ],
+  "hasWindowFocus": [
+   0
+  ],
+  "initWindowDecorActionBar": [
+   0
+  ],
+  "invalidateOptionsMenu": [
+   0
+  ],
+  "isActivityTransitionRunning": [
+   0
+  ],
+  "isBackgroundVisibleBehind": [
+   0
+  ],
+  "isChangingConfigurations": [
+   0
+  ],
+  "isChild": [
+   0
+  ],
+  "isDestroyed": [
+   0
+  ],
+  "isFinishing": [
+   0
+  ],
+  "isImmersive": [
+   0
+  ],
+  "isInMultiWindowMode": [
+   0
+  ],
+  "isInPictureInPictureMode": [
+   0
+  ],
+  "isLaunchedFromBubble": [
+   0
+  ],
+  "isLocalVoiceInteractionSupported": [
+   0
+  ],
+  "isOverlayWithDecorCaptionEnabled": [
+   0
+  ],
+  "isResumed": [
+   0
+  ],
+  "isTaskRoot": [
+   0
+  ],
+  "isVisibleForAutofill": [
+   0
+  ],
+  "isVoiceInteraction": [
+   0
+  ],
+  "isVoiceInteractionRoot": [
+   0
+  ],
+  "managedQuery": [
+   4,
+   5
+  ],
+  "missingDialog": [
+   1
+  ],
+  "moveTaskToBack": [
+   1
+  ],
+  "navigateUpTo": [
+   1
+  ],
+  "navigateUpToFromChild": [
+   2
+  ],
+  "notifyContentCaptureManagerIfNeeded": [
+   1
+  ],
+  "notifyVoiceInteractionManagerServiceActivityEvent": [
+   1
+  ],
+  "onActionModeFinished": [
+   1
+  ],
+  "onActionModeStarted": [
+   1
+  ],
+  "onActivityReenter": [
+   2
+  ],
+  "onActivityResult": [
+   3
+  ],
+  "onApplyThemeResource": [
+   3
+  ],
+  "onAttachFragment": [
+   1
+  ],
+  "onAttachedToWindow": [
+   0
+  ],
+  "onBackInvoked": [
+   0
+  ],
+  "onBackPressed": [
+   0
+  ],
+  "onBackgroundVisibleBehindChanged": [
+   1
+  ],
+  "onChildTitleChanged": [
+   2
+  ],
+  "onConfigurationChanged": [
+   1
+  ],
+  "onContentChanged": [
+   0
+  ],
+  "onContextItemSelected": [
+   1
+  ],
+  "onContextMenuClosed": [
+   1
+  ],
+  "onCreate": [
+   1,
+   2
+  ],
+  "onCreateContextMenu": [
+   3
+  ],
+  "onCreateDescription": [
+   0
+  ],
+  "onCreateDialog": [
+   1,
+   2
+  ],
+  "onCreateNavigateUpTaskStack": [
+   1
+  ],
+  "onCreateOptionsMenu": [
+   1
+  ],
+  "onCreatePanelMenu": [
+   2
+  ],
+  "onCreatePanelView": [
+   1
+  ],
+  "onCreateThumbnail": [
+   2
+  ],
+  "onCreateView": [
+   3,
+   4
+  ],
+  "onDestroy": [
+   0
+  ],
+  "onDetachedFromWindow": [
+   0
+  ],
+  "onEnterAnimationComplete": [
+   0
+  ],
+  "onGenericMotionEvent": [
+   1
+  ],
+  "onGetDirectActions": [
+   2
+  ],
+  "onKeyDown": [
+   2
+  ],
+  "onKeyLongPress": [
+   2
+  ],
+  "onKeyMultiple": [
+   3
+  ],
+  "onKeyShortcut": [
+   2
+  ],
+  "onKeyUp": [
+   2
+  ],
+  "onLocalVoiceInteractionStarted": [
+   0
+  ],
+  "onLocalVoiceInteractionStopped": [
+   0
+  ],
+  "onLowMemory": [
+   0
+  ],
+  "onMenuItemSelected": [
+   2
+  ],
+  "onMenuOpened": [
+   2
+  ],
+  "onMovedToDisplay": [
+   2
+  ],
+  "onMultiWindowModeChanged": [
+   1,
+   2
+  ],
+  "onNavigateUp": [
+   0
+  ],
+  "onNavigateUpFromChild": [
+   1
+  ],
+  "onNewActivityOptions": [
+   1
+  ],
+  "onNewIntent": [
+   1
+  ],
+  "onOptionsItemSelected": [
+   1
+  ],
+  "onOptionsMenuClosed": [
+   1
+  ],
+  "onPanelClosed": [
+   2
+  ],
+  "onPause": [
+   0
+  ],
+  "onPerformDirectAction": [
+   4
+  ],
+  "onPictureInPictureModeChanged": [
+   1,
+   2
+  ],
+  "onPictureInPictureRequested": [
+   0
+  ],
+  "onPictureInPictureUiStateChanged": [
+   1
+  ],
+  "onPostCreate": [
+   1,
+   2
+  ],
+  "onPostResume": [
+   0
+  ],
+  "onPrepareDialog": [
+   2,
+   3
+  ],
+  "onPrepareNavigateUpTaskStack": [
+   1
+  ],
+  "onPrepareOptionsMenu": [
+   1
+  ],
+  "onPreparePanel": [
+   3
+  ],
+  "onProvideAssistContent": [
+   1
+  ],
+  "onProvideAssistData": [
+   1
+  ],
+  "onProvideKeyboardShortcuts": [
+   3
+  ],
+  "onProvideReferrer": [
+   0
+  ],
+  "onRequestPermissionsResult": [
+   3
+  ],
+  "onRestart": [
+   0
+  ],
+  "onRestoreInstanceState": [
+   1,
+   2
+  ],
+  "onResume": [
+   0
+  ],
+  "onRetainNonConfigurationInstance": [
+   0
+  ],
+  "onSaveInstanceState": [
+   1,
+   2
+  ],
+  "onSearchRequested": [
+   0,
+   1
+  ],
+  "onStart": [
+   0
+  ],
+  "onStateNotSaved": [
+   0
+  ],
+  "onStop": [
+   0
+  ],
+  "onTitleChanged": [
+   2
+  ],
+  "onTopResumedActivityChanged": [
+   1
+  ],
+  "onTouchEvent": [
+   1
+  ],
+  "onTrackballEvent": [
+   1
+  ],
+  "onTrimMemory": [
+   1
+  ],
+  "onUserInteraction": [
+   0
+  ],
+  "onUserLeaveHint": [
+   0
+  ],
+  "onVisibleBehindCanceled": [
+   0
+  ],
+  "onWindowAttributesChanged": [
+   1
+  ],
+  "onWindowDismissed": [
+   2
+  ],
+  "onWindowFocusChanged": [
+   1
+  ],
+  "onWindowStartingActionMode": [
+   1,
+   2
+  ],
+  "openContextMenu": [
+   1
+  ],
+  "openOptionsMenu": [
+   0
+  ],
+  "overrideActivityTransition": [
+   3,
+   4
+  ],
+  "overridePendingTransition": [
+   2,
+   3
+  ],
+  "postponeEnterTransition": [
+   0
+  ],
+  "recreate": [
+   0
+  ],
+  "registerActivityLifecycleCallbacks": [
+   1
+  ],
+  "registerComponentCallbacks": [
+   1
+  ],
+  "registerForContextMenu": [
+   1
+  ],
+  "registerRemoteAnimations": [
+   1
+  ],
+  "registerScreenCaptureCallback": [
+   2
+  ],
+  "releaseInstance": [
+   0
+  ],
+  "removeDialog": [
+   1
+  ],
+  "reportFullyDrawn": [
+   0
+  ],
+  "requestDragAndDropPermissions": [
+   1
+  ],
+  "requestFullscreenMode": [
+   3
+  ],
+  "requestPermissions": [
+   2
+  ],
+  "requestShowKeyboardShortcuts": [
+   0
+  ],
+  "requestVisibleBehind": [
+   1
+  ],
+  "requestWindowFeature": [
+   1
+  ],
+  "requireViewById": [
+   1
+  ],
+  "restoreHasCurrentPermissionRequest": [
+   1
+  ],
+  "restoreManagedDialogs": [
+   1
+  ],
+  "runOnUiThread": [
+   1
+  ],
+  "saveManagedDialogs": [
+   1
+  ],
+  "savedDialogArgsKeyFor": [
+   1
+  ],
+  "savedDialogKeyFor": [
+   1
+  ],
+  "setActionBar": [
+   1
+  ],
+  "setAllowCrossUidActivitySwitchFromBelow": [
+   1
+  ],
+  "setContentTransitionManager": [
+   1
+  ],
+  "setContentView": [
+   1,
+   2
+  ],
+  "setDefaultKeyMode": [
+   1
+  ],
+  "setDisablePreviewScreenshots": [
+   1
+  ],
+  "setEnterSharedElementCallback": [
+   1
+  ],
+  "setExitSharedElementCallback": [
+   1
+  ],
+  "setFeatureDrawable": [
+   2
+  ],
+  "setFeatureDrawableAlpha": [
+   2
+  ],
+  "setFeatureDrawableResource": [
+   2
+  ],
+  "setFeatureDrawableUri": [
+   2
+  ],
+  "setFinishOnTouchOutside": [
+   1
+  ],
+  "setForceSendResultForMediaProjection": [
+   0
+  ],
+  "setImmersive": [
+   1
+  ],
+  "setInheritShowWhenLocked": [
+   1
+  ],
+  "setIntent": [
+   1
+  ],
+  "setLocusContext": [
+   2
+  ],
+  "setLocusContextToContentCapture": [
+   2
+  ],
+  "setMediaController": [
+   1
+  ],
+  "setOverlayWithDecorCaptionEnabled": [
+   1
+  ],
+  "setPersistent": [
+   1
+  ],
+  "setPictureInPictureParams": [
+   1
+  ],
+  "setProgress": [
+   1
+  ],
+  "setProgressBarIndeterminate": [
+   1
+  ],
+  "setProgressBarIndeterminateVisibility": [
+   1
+  ],
+  "setProgressBarVisibility": [
+   1
+  ],
+  "setRecentsScreenshotEnabled": [
+   1
+  ],
+  "setRequestedOrientation": [
+   1
+  ],
+  "setResult": [
+   1,
+   2
+  ],
+  "setSecondaryProgress": [
+   1
+  ],
+  "setShouldDockBigOverlays": [
+   1
+  ],
+  "setShowWhenLocked": [
+   1
+  ],
+  "setTaskDescription": [
+   1
+  ],
+  "setTheme": [
+   1
+  ],
+  "setTitle": [
+   1
+  ],
+  "setTitleColor": [
+   1
+  ],
+  "setTranslucent": [
+   1
+  ],
+  "setTurnScreenOn": [
+   1
+  ],
+  "setVisible": [
+   1
+  ],
+  "setVolumeControlStream": [
+   1
+  ],
+  "setVrModeEnabled": [
+   2
+  ],
+  "shouldDockBigOverlays": [
+   0
+  ],
+  "shouldShowRequestPermissionRationale": [
+   1
+  ],
+  "shouldUpRecreateTask": [
+   1
+  ],
+  "showAssist": [
+   1
+  ],
+  "showDialog": [
+   1,
+   2
+  ],
+  "showLockTaskEscapeMessage": [
+   0
+  ],
+  "startActionMode": [
+   1,
+   2
+  ],
+  "startActivities": [
+   1,
+   2
+  ],
+  "startActivity": [
+   1,
+   2
+  ],
+  "startActivityAsCaller": [
+   4,
+   5
+  ],
+  "startActivityAsUser": [
+   2,
+   3
+  ],
+  "startActivityAsUserFromFragment": [
+   5
+  ],
+  "startActivityForResult": [
+   2,
+   3,
+   4
+  ],
+  "startActivityForResultAsUser": [
+   3,
+   4,
+   5
+  ],
+  "startActivityFromChild": [
+   3,
+   4
+  ],
+  "startActivityFromFragment": [
+   3,
+   4
+  ],
+  "startActivityIfNeeded": [
+   2,
+   3
+  ],
+  "startIntentSender": [
+   5,
+   6
+  ],
+  "startIntentSenderForResult": [
+   6,
+   7
+  ],
+  "startIntentSenderForResultInner": [
+   7
+  ],
+  "startIntentSenderFromChild": [
+   7,
+   8
+  ],
+  "startIntentSenderFromFragment": [
+   7
+  ],
+  "startLocalVoiceInteraction": [
+   1
+  ],
+  "startLockTask": [
+   0
+  ],
+  "startManagingCursor": [
+   1
+  ],
+  "startNextMatchingActivity": [
+   1,
+   2
+  ],
+  "startPostponedEnterTransition": [
+   0
+  ],
+  "startSearch": [
+   4
+  ],
+  "stopLocalVoiceInteraction": [
+   0
+  ],
+  "stopLockTask": [
+   0
+  ],
+  "stopManagingCursor": [
+   1
+  ],
+  "storeHasCurrentPermissionRequest": [
+   1
+  ],
+  "takeKeyEvents": [
+   1
+  ],
+  "transferSpringboardActivityOptions": [
+   1
+  ],
+  "triggerSearch": [
+   2
+  ],
+  "unregisterActivityLifecycleCallbacks": [
+   1
+  ],
+  "unregisterComponentCallbacks": [
+   1
+  ],
+  "unregisterForContextMenu": [
+   1
+  ],
+  "unregisterRemoteAnimations": [
+   0
+  ],
+  "unregisterScreenCaptureCallback": [
+   1
+  ],
+  "updateUiTranslationState": [
+   5
+  ]
+ },
+ "WebChromeClient": {
+  "getDefaultVideoPoster": [
+   0
+  ],
+  "getVideoLoadingProgressView": [
+   0
+  ],
+  "getVisitedHistory": [
+   1
+  ],
+  "onCloseWindow": [
+   1
+  ],
+  "onConsoleMessage": [
+   1,
+   3
+  ],
+  "onCreateWindow": [
+   4
+  ],
+  "onExceededDatabaseQuota": [
+   6
+  ],
+  "onGeolocationPermissionsHidePrompt": [
+   0
+  ],
+  "onGeolocationPermissionsShowPrompt": [
+   2
+  ],
+  "onHideCustomView": [
+   0
+  ],
+  "onJsAlert": [
+   4
+  ],
+  "onJsBeforeUnload": [
+   4
+  ],
+  "onJsConfirm": [
+   4
+  ],
+  "onJsPrompt": [
+   5
+  ],
+  "onJsTimeout": [
+   0
+  ],
+  "onPermissionRequest": [
+   1
+  ],
+  "onPermissionRequestCanceled": [
+   1
+  ],
+  "onProgressChanged": [
+   2
+  ],
+  "onReachedMaxAppCacheSize": [
+   3
+  ],
+  "onReceivedIcon": [
+   2
+  ],
+  "onReceivedTitle": [
+   2
+  ],
+  "onReceivedTouchIconUrl": [
+   3
+  ],
+  "onRequestFocus": [
+   1
+  ],
+  "onShowCustomView": [
+   2,
+   3
+  ],
+  "onShowFileChooser": [
+   3
+  ],
+  "openFileChooser": [
+   3
+  ]
+ },
+ "WebViewClient": {
+  "doUpdateVisitedHistory": [
+   3
+  ],
+  "onFormResubmission": [
+   3
+  ],
+  "onLoadResource": [
+   2
+  ],
+  "onPageCommitVisible": [
+   2
+  ],
+  "onPageFinished": [
+   2
+  ],
+  "onPageStarted": [
+   3
+  ],
+  "onReceivedClientCertRequest": [
+   2
+  ],
+  "onReceivedError": [
+   3,
+   4
+  ],
+  "onReceivedHttpAuthRequest": [
+   4
+  ],
+  "onReceivedHttpError": [
+   3
+  ],
+  "onReceivedLoginRequest": [
+   4
+  ],
+  "onReceivedSslError": [
+   3
+  ],
+  "onRenderProcessGone": [
+   2
+  ],
+  "onSafeBrowsingHit": [
+   4
+  ],
+  "onScaleChanged": [
+   3
+  ],
+  "onTooManyRedirects": [
+   3
+  ],
+  "onUnhandledInputEvent": [
+   2
+  ],
+  "onUnhandledInputEventInternal": [
+   2
+  ],
+  "onUnhandledKeyEvent": [
+   2
+  ],
+  "shouldInterceptRequest": [
+   2
+  ],
+  "shouldOverrideKeyEvent": [
+   2
+  ],
+  "shouldOverrideUrlLoading": [
+   2
+  ]
+ }
+}

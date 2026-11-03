@@ -223,6 +223,19 @@ App 只把 DSH 基础地址保存在 SharedPreferences。Cookie、localStorage �
 
 图标使用 DSH 官方品牌图形中的鲸鱼标识（来自 [deepseek-harness BrandWordmark](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-primitives/src/BrandWordmark.tsx)），配色为深蓝渐变底 + `#3EC6FF` 蓝鲸。`tools/icon-master.png` 是 1024px 透明底母版，`tools/make-icons.ps1` 负责生成各密度图标，`tools/icon-source.svg` 是母版来源。
 
+### 本地静态校验（无需 Android SDK）
+
+本机没有 SDK 时，`javac` 无法判断某个 `@Override` 是否真的存在于父类中。`tools/check-overrides.py` 用 Android 14 源码提取的方法签名表（`tools/android-api-signatures.json`）逐个核对 `@Override` 的方法名和参数个数，提前复现 CI 里的那句 `method does not override or implement a method from a supertype`。
+
+```powershell
+python -m pip install javalang
+python tools/check-overrides.py
+```
+
+退出码 0 表示全部 19 个 `@Override` 都能对上 `Activity` / `WebViewClient` / `WebChromeClient` 的真实方法。
+
+> 这个检查是本项目自己的工具，不是 Android 官方工具；它只能发现“方法名/参数个数不匹配”这一类错误，其余编译错误仍然只能由 CI 或本地 SDK 发现。
+
 ---
 
 ## 六、已知限制
@@ -248,5 +261,16 @@ App 只把 DSH 基础地址保存在 SharedPreferences。Cookie、localStorage �
 | 文件选择器打不开 | 卓易通/系统的文档选择器是否可用 |
 | 提示系统 WebView 不可用 | 卓易通或系统没有提供 Android System WebView |
 | 下载没有出现 | Android 10 以下是否拒绝了存储权限；链接是否为 http/https |
+| CI 报 `method does not override or implement a method from a supertype` | 某个 `@Override` 放错了类；先跑 `python tools/check-overrides.py` |
+
+### 已修复的构建失败
+
+首次云端构建在 `:app:compileDebugJavaWithJavac` 失败，Java 编译器只报 1 个错误：
+
+```text
+error: method does not override or implement a method from a supertype
+```
+
+原因是 `onReceivedTitle(WebView, String)` 被写在了 `WebViewClient` 里。这个方法只属于 `WebChromeClient`，`WebViewClient` 没有它。已把该重写移入 `DshChromeClient`（`MainActivity.java` 第 588 行起的内部类），并用 `tools/check-overrides.py` 复现验证过修复。
 
 如果要在公网访问，建议在 DSH 前面放 HTTPS 反向代理，用证书和访问控制，不要把明文 3080 直接暴露到互联网。
