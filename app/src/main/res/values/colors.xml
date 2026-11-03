@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#F5F7FB</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="ink">#0F172A</color>
+    <color name="muted">#64748B</color>
+    <color name="hint">#94A3B8</color>
+    <color name="accent">#2563EB</color>
+    <color name="accent_dark">#1D4ED8</color>
+    <color name="line">#E2E8F0</color>
+    <color name="input_bg">#F8FAFC</color>
+    <color name="progress_bg">#E2E8F0</color>
+    <color name="error">#DC2626</color>
+    <color name="icon_bg">#071A2B</color>
+    <color name="white">#FFFFFF</color>
+</resources>

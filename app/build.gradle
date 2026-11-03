@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.dsh.mobile'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.dsh.mobile"
+        minSdk 23
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    // A committed debug-only key keeps repeated GitHub Actions builds
+    // signature-compatible, so a newer APK can be installed over an older one.
+    // It is not a production/release signing key.
+    signingConfigs {
+        debug {
+            storeFile file("dsh-debug.keystore")
+            storePassword "android"
+            keyAlias "dshmobile"
+            keyPassword "android"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // This app intentionally has no AndroidX, Kotlin, Google Play Services or
+    // native libraries. That keeps it small and avoids dependencies that are
+    // often unavailable inside HarmonyOS Android-compatibility containers.
+}
+
+dependencies {
+    // Intentionally empty. Everything uses the Android framework only.
+}

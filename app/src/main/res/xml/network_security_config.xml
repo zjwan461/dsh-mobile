@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    DSH is normally served over plain HTTP on a LAN address such as
+    http://192.168.1.20:3080. Android blocks cleartext traffic by default, so
+    it must be explicitly enabled for this local-network browser.
+
+    HTTPS still uses the system trust store. Self-signed certificate errors are
+    never ignored by the app.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

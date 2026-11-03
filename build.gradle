@@ -1,0 +1,4 @@
+// Top-level build file. Keep the plugin version in sync with README.md.
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}
