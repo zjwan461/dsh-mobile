@@ -63,4 +63,9 @@
     <string name="ssl_reason_unknown">未知的证书错误</string>
     <string name="settings_clear_ssl_trust">清除已信任的 HTTPS 证书</string>
     <string name="toast_ssl_trust_cleared">已清除，下次访问会重新提示</string>
+    <string name="settings_ssl_scope_main_only">证书提示：仅主页面（其他资源自动放行）</string>
+    <string name="settings_ssl_scope_all">证书提示：所有资源</string>
+    <string name="toast_ssl_scope_main_only">已改为：只提示主页面，子资源自动放行</string>
+    <string name="toast_ssl_scope_all">已改为：所有资源的证书错误都会提示</string>
+    <string name="toast_ssl_subresource_passed">已自动放行 %1$s 的子资源证书错误</string>
 </resources>

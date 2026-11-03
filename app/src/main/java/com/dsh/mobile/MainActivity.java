@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     private static final String PREFS_NAME = "dsh_mobile";
     private static final String PREF_BASE_URL = "base_url";
     private static final String PREF_SSL_TRUSTED = "ssl_trusted_authorities";
+    private static final String PREF_SSL_MAIN_FRAME_ONLY = "ssl_prompt_main_frame_only";
     private static final String MOBILE_UA_SUFFIX = " DSHMobile/1.0";
 
     private static final int REQ_FILE_CHOOSER = 1001;
@@ -87,6 +88,13 @@ public class MainActivity extends Activity {
 
     /** Authorities (host:port) whose certificate the user chose to accept. */
     private final Set<String> trustedSslAuthorities = new HashSet<>();
+    /**
+     * When true (default) only certificate errors for the page itself are
+     * asked about; assets pulled in from other hosts are let through quietly.
+     */
+    private boolean sslPromptMainFrameOnly = true;
+    /** Hosts already announced as auto-passed in this process, to avoid spam. */
+    private final Set<String> sslQuietHosts = new HashSet<>();
     private SslErrorHandler pendingSslHandler;
     private String pendingSslAuthority;
     private AlertDialog sslDialog;
@@ -104,6 +112,7 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         trustedSslAuthorities.addAll(
                 prefs.getStringSet(PREF_SSL_TRUSTED, Collections.emptySet()));
+        sslPromptMainFrameOnly = prefs.getBoolean(PREF_SSL_MAIN_FRAME_ONLY, true);
         applySystemBars();
 
         String saved = prefs.getString(PREF_BASE_URL, "");
@@ -486,6 +495,65 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * Whether this error comes from something other than the page itself.
+     *
+     * <p>WebView reports certificate problems for sub-resources through the
+     * same callback, without saying which frame they belong to. Comparing the
+     * failing authority with the page's own authority separates the two well
+     * enough: a self-signed DSH host shows up as the page, while a CDN hatch
+     * or a second LAN box shows up as a different authority.</p>
+     */
+    private boolean isSubResourceAuthority(WebView view, String authority) {
+        if (TextUtils.isEmpty(authority)) {
+            return false;
+        }
+        String pageAuthority = currentPageAuthority(view);
+        if (TextUtils.isEmpty(pageAuthority)) {
+            // The page has not committed a URL yet, so this is most likely the
+            // main document. Ask.
+            return false;
+        }
+        return !authority.equalsIgnoreCase(pageAuthority);
+    }
+
+    private String currentPageAuthority(WebView view) {
+        String url = view != null ? view.getUrl() : null;
+        if (TextUtils.isEmpty(url)) {
+            url = lastPageUrl;
+        }
+        if (TextUtils.isEmpty(url)) {
+            url = baseUrl;
+        }
+        if (TextUtils.isEmpty(url)) {
+            return null;
+        }
+        try {
+            String authority = Uri.parse(url).getAuthority();
+            return TextUtils.isEmpty(authority) ? null : authority.toLowerCase(Locale.US);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Announce an auto-passed host once per process, then stay quiet. */
+    private void noteQuietSslHost(String authority) {
+        String key = TextUtils.isEmpty(authority) ? "?" : authority;
+        if (sslQuietHosts.add(key)) {
+            Toast.makeText(this,
+                    getString(R.string.toast_ssl_subresource_passed, key),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void toggleSslPromptScope() {
+        sslPromptMainFrameOnly = !sslPromptMainFrameOnly;
+        prefs.edit().putBoolean(PREF_SSL_MAIN_FRAME_ONLY, sslPromptMainFrameOnly).apply();
+        toast(sslPromptMainFrameOnly
+                ? R.string.toast_ssl_scope_main_only
+                : R.string.toast_ssl_scope_all);
+    }
+
+    /**
      * Ask once per authority. Accepting records the authority so later loads
      * of the same server go through without a prompt.
      */
@@ -587,11 +655,15 @@ public class MainActivity extends Activity {
         if (isFinishing()) {
             return;
         }
+        final String sslScopeLabel = getString(sslPromptMainFrameOnly
+                ? R.string.settings_ssl_scope_main_only
+                : R.string.settings_ssl_scope_all);
         final String[] actions = {
                 getString(R.string.settings_change_url),
                 getString(R.string.settings_open_browser),
                 getString(R.string.settings_clear_cache),
                 getString(R.string.settings_clear_data),
+                sslScopeLabel,
                 getString(R.string.settings_clear_ssl_trust)
         };
 
@@ -612,6 +684,9 @@ public class MainActivity extends Activity {
                             confirmClearSiteData();
                             break;
                         case 4:
+                            toggleSslPromptScope();
+                            break;
+                        case 5:
                             clearSslTrust();
                             break;
                         default:
@@ -733,6 +808,16 @@ public class MainActivity extends Activity {
             // again. DSH on a LAN is commonly served with a self-signed
             // certificate, which is why this escape hatch exists at all.
             if (!TextUtils.isEmpty(authority) && trustedSslAuthorities.contains(authority)) {
+                handler.proceed();
+                return;
+            }
+
+            // Sub-resources (fonts, images, scripts) served by a different
+            // host would each raise their own dialog on a self-signed setup.
+            // By default those are let through quietly; only the page itself
+            // asks. The settings switch turns this back into ask-for-all.
+            if (sslPromptMainFrameOnly && isSubResourceAuthority(view, authority)) {
+                noteQuietSslHost(authority);
                 handler.proceed();
                 return;
             }
