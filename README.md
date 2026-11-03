@@ -17,12 +17,12 @@
 - 支持局域网明文 HTTP（Android 默认会拦截，工程已配置 network security config）
 - WebView 启用 JavaScript、DOM Storage、Cookie、数据库和页面缩放
 - 顶部栏：后退、刷新、设置
-- 设置项：修改地址、系统浏览器打开、清除缓存、清除 Cookie/站点数据
+- 设置项：修改地址、系统浏览器打开、清除缓存、清除 Cookie/站点数据、清除已信任的 HTTPS 证书
 - 网页文件上传（`<input type="file">`）
 - 网页下载走系统 DownloadManager，保存到 `Download/DSH Mobile/`
 - 网页请求摄像头/麦克风时按需申请系统权限
 - 主页面加载失败时显示可读错误页，可重试或修改地址
-- 不会忽略 HTTPS 证书错误
+- 自签名 HTTPS 证书：首次访问弹一次提示，确认后继续并记住该地址，之后不再打断
 - 不内置 DSH、不代理流量、不申请不必要的权限
 - 纯 Java + Android Framework，无 Google Play Services、无原生 so、无第三方运行时
 
@@ -216,8 +216,19 @@ App 只把 DSH 基础地址保存在 SharedPreferences。Cookie、localStorage �
 - 禁止 `file://` 访问和通用文件 URL 跨域访问
 - 文件上传走系统 document picker，不申请存储权限
 - 下载通过 DownloadManager；Android 10 以下才申请旧版存储权限
-- HTTPS 证书错误 `handler.cancel()`，不做“继续访问”绕过
+- HTTPS 证书错误：先弹提示说明原因（自签名 / 过期 / 域名不匹配等），用户点「仍然继续」后 `handler.proceed()`；确认过的 `host:port` 写入 SharedPreferences，之后自动放行。点「取消」仍走错误页，不做静默跳过
 - URL 只允许 http/https；`mailto:`、`tel:`、`sms:` 交给系统，其余自定义 scheme 阻止
+
+### 自签名 HTTPS
+
+DSH 用 `--tls-cert/--tls-key` 起自签名 HTTPS 时，系统信任链不认这张证书。App 的处理方式：
+
+1. 第一次访问该 `host:port`，弹出「证书未通过校验」，写明是自签名、过期还是域名不匹配；
+2. 点「仍然继续」→ 本次继续加载，并把该地址记为信任；以后再访问不再提示；
+3. 点「取消」→ 停在错误页，可以重试或改地址；
+4. 想重新看到提示：设置 →「清除已信任的 HTTPS 证书」。
+
+> 继续访问等于跳过证书校验，只适合你自己能控制的局域网服务器。公网地址不要这样做：中间人无法被发现。
 
 ### 图标
 
@@ -242,7 +253,7 @@ python tools/check-overrides.py
 
 - DSH 的移动端布局没有改动；App 只负责把它显示在 WebView 里。
 - 不支持 `blob:` 下载（DownloadManager 只能处理 http/https 链接）。
-- 不绕过自签名 HTTPS 证书。局域网建议直接用 `http://`，或给 DSH 配系统信任的证书。
+- 自签名 HTTPS 证书由用户手动确认后放行，**这不是安全的默认行为**；只在完全可控的局域网使用，公网地址请换成受信任证书。
 - 局域网 `http://` 不属于浏览器定义的“安全上下文”，少数依赖 `navigator.clipboard`、WebCrypto 等安全上下文 API 的网页功能可能不可用；如果 DSH 的某个功能受此影响，需要给 DSH 配 HTTPS。
 - `window.open` 多窗口被关闭，目标页会在当前 WebView 内加载。
 - 没有做 release keystore、混淆、应用商店签名。

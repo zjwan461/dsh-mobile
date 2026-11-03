@@ -44,7 +44,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * A deliberately small, framework-only WebView shell for DeepSeek Harness.
@@ -58,6 +62,7 @@ public class MainActivity extends Activity {
 
     private static final String PREFS_NAME = "dsh_mobile";
     private static final String PREF_BASE_URL = "base_url";
+    private static final String PREF_SSL_TRUSTED = "ssl_trusted_authorities";
     private static final String MOBILE_UA_SUFFIX = " DSHMobile/1.0";
 
     private static final int REQ_FILE_CHOOSER = 1001;
@@ -80,6 +85,12 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileChooserCallback;
     private PermissionRequest pendingPermissionRequest;
 
+    /** Authorities (host:port) whose certificate the user chose to accept. */
+    private final Set<String> trustedSslAuthorities = new HashSet<>();
+    private SslErrorHandler pendingSslHandler;
+    private String pendingSslAuthority;
+    private AlertDialog sslDialog;
+
     private String pendingDownloadUrl;
     private String pendingDownloadUserAgent;
     private String pendingDownloadContentDisposition;
@@ -91,6 +102,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        trustedSslAuthorities.addAll(
+                prefs.getStringSet(PREF_SSL_TRUSTED, Collections.emptySet()));
         applySystemBars();
 
         String saved = prefs.getString(PREF_BASE_URL, "");
@@ -416,6 +429,157 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------
+    // HTTPS certificate handling
+    // ---------------------------------------------------------------------
+
+    /**
+     * @return the "host:port" of the failing request, preferring the URL that
+     * actually failed over the configured base address.
+     */
+    private String sslAuthorityOf(SslError error) {
+        if (error != null) {
+            String url = error.getUrl();
+            if (!TextUtils.isEmpty(url)) {
+                try {
+                    String authority = Uri.parse(url).getAuthority();
+                    if (!TextUtils.isEmpty(authority)) {
+                        return authority.toLowerCase(Locale.US);
+                    }
+                } catch (Exception ignored) {
+                    // Fall through to the base URL.
+                }
+            }
+        }
+        if (!TextUtils.isEmpty(baseUrl)) {
+            try {
+                String authority = Uri.parse(baseUrl).getAuthority();
+                if (!TextUtils.isEmpty(authority)) {
+                    return authority.toLowerCase(Locale.US);
+                }
+            } catch (Exception ignored) {
+                // Nothing to fall back to.
+            }
+        }
+        return null;
+    }
+
+    private String describeSslError(SslError error) {
+        if (error == null) {
+            return getString(R.string.ssl_reason_unknown);
+        }
+        switch (error.getPrimaryError()) {
+            case SslError.SSL_NOTYETVALID:
+                return getString(R.string.ssl_reason_not_yet_valid);
+            case SslError.SSL_EXPIRED:
+                return getString(R.string.ssl_reason_expired);
+            case SslError.SSL_IDMISMATCH:
+                return getString(R.string.ssl_reason_mismatch);
+            case SslError.SSL_UNTRUSTED:
+                return getString(R.string.ssl_reason_untrusted);
+            case SslError.SSL_DATE_INVALID:
+                return getString(R.string.ssl_reason_date);
+            case SslError.SSL_INVALID:
+                return getString(R.string.ssl_reason_invalid);
+            default:
+                return getString(R.string.ssl_reason_unknown);
+        }
+    }
+
+    /**
+     * Ask once per authority. Accepting records the authority so later loads
+     * of the same server go through without a prompt.
+     */
+    private void askAboutSslError(String authority, SslError error) {
+        if (isFinishing() || isDestroyed()) {
+            cancelPendingSslHandler();
+            return;
+        }
+        dismissSslDialog();
+
+        String host = TextUtils.isEmpty(authority)
+                ? getString(R.string.app_name)
+                : authority;
+        String message = getString(
+                R.string.ssl_dialog_message,
+                host,
+                describeSslError(error));
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.ssl_dialog_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.ssl_continue, (d, which) -> {
+                    SslErrorHandler handler = takePendingSslHandler();
+                    rememberSslAuthority(pendingSslAuthority);
+                    pendingSslAuthority = null;
+                    if (handler != null) {
+                        hideError();
+                        pageHadError = false;
+                        handler.proceed();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, (d, which) -> {
+                    pendingSslAuthority = null;
+                    cancelPendingSslHandler();
+                    showError(getString(R.string.error_ssl_title),
+                            getString(R.string.error_ssl_detail));
+                })
+                .setOnCancelListener(d -> {
+                    pendingSslAuthority = null;
+                    cancelPendingSslHandler();
+                    showError(getString(R.string.error_ssl_title),
+                            getString(R.string.error_ssl_detail));
+                })
+                .create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+        sslDialog = dialog;
+    }
+
+    private void rememberSslAuthority(String authority) {
+        if (TextUtils.isEmpty(authority)) {
+            return;
+        }
+        trustedSslAuthorities.add(authority);
+        prefs.edit()
+                .putStringSet(PREF_SSL_TRUSTED, new HashSet<>(trustedSslAuthorities))
+                .apply();
+    }
+
+    private SslErrorHandler takePendingSslHandler() {
+        SslErrorHandler handler = pendingSslHandler;
+        pendingSslHandler = null;
+        return handler;
+    }
+
+    private void cancelPendingSslHandler() {
+        SslErrorHandler handler = takePendingSslHandler();
+        if (handler != null) {
+            try {
+                handler.cancel();
+            } catch (Throwable ignored) {
+                // The request may already be gone.
+            }
+        }
+    }
+
+    private void dismissSslDialog() {
+        if (sslDialog != null) {
+            try {
+                sslDialog.dismiss();
+            } catch (Throwable ignored) {
+                // Already dismissed.
+            }
+            sslDialog = null;
+        }
+    }
+
+    private void clearSslTrust() {
+        trustedSslAuthorities.clear();
+        prefs.edit().remove(PREF_SSL_TRUSTED).apply();
+        toast(R.string.toast_ssl_trust_cleared);
+    }
+
+    // ---------------------------------------------------------------------
     // Settings and data cleanup
     // ---------------------------------------------------------------------
 
@@ -427,7 +591,8 @@ public class MainActivity extends Activity {
                 getString(R.string.settings_change_url),
                 getString(R.string.settings_open_browser),
                 getString(R.string.settings_clear_cache),
-                getString(R.string.settings_clear_data)
+                getString(R.string.settings_clear_data),
+                getString(R.string.settings_clear_ssl_trust)
         };
 
         new AlertDialog.Builder(this)
@@ -445,6 +610,9 @@ public class MainActivity extends Activity {
                             break;
                         case 3:
                             confirmClearSiteData();
+                            break;
+                        case 4:
+                            clearSslTrust();
                             break;
                         default:
                             break;
@@ -547,8 +715,9 @@ public class MainActivity extends Activity {
                 return;
             }
             // onReceivedSslError may already have shown the more specific
-            // certificate message for this page.
-            if (pageHadError) {
+            // certificate message for this page, or be waiting for the user's
+            // decision right now.
+            if (pageHadError || pendingSslHandler != null) {
                 return;
             }
             hideProgress();
@@ -558,14 +727,30 @@ public class MainActivity extends Activity {
         @Override
         public void onReceivedSslError(WebView view, SslErrorHandler handler,
                                        SslError error) {
-            // Never continue past a certificate error. Users on a LAN should
-            // use http://, or install a certificate the system already trusts.
-            handler.cancel();
-            if (!pageHadError) {
-                hideProgress();
-                showError(getString(R.string.error_ssl_title),
-                        getString(R.string.error_ssl_detail));
+            final String authority = sslAuthorityOf(error);
+
+            // A host the user already approved keeps working without asking
+            // again. DSH on a LAN is commonly served with a self-signed
+            // certificate, which is why this escape hatch exists at all.
+            if (!TextUtils.isEmpty(authority) && trustedSslAuthorities.contains(authority)) {
+                handler.proceed();
+                return;
             }
+
+            hideProgress();
+            // A second error while a decision is pending would otherwise leak
+            // the previous handler without resolving it.
+            if (pendingSslHandler != null && pendingSslHandler != handler) {
+                SslErrorHandler stale = takePendingSslHandler();
+                try {
+                    stale.cancel();
+                } catch (Throwable ignored) {
+                    // The request may already be gone.
+                }
+            }
+            pendingSslHandler = handler;
+            pendingSslAuthority = authority;
+            askAboutSslError(authority, error);
         }
 
         @Override
@@ -983,6 +1168,9 @@ public class MainActivity extends Activity {
             }
             pendingPermissionRequest = null;
         }
+        dismissSslDialog();
+        pendingSslAuthority = null;
+        cancelPendingSslHandler();
         clearPendingDownload();
     }
 

@@ -43,11 +43,24 @@
     <string name="error_timeout">连接超时。\n请检查手机与电脑是否在同一网络，以及 DSH 是否仍在运行。</string>
     <string name="error_unknown">页面加载失败。\n请检查网络和 DSH 地址后重试。</string>
     <string name="error_code">错误码 %1$d：%2$s</string>
-    <string name="error_ssl_title">HTTPS 证书校验失败</string>
-    <string name="error_ssl_detail">HTTPS 证书未通过校验。请改用 http:// 地址，或在服务器上配置受信任的证书。为安全起见，应用不会忽略证书错误。</string>
+    <string name="error_ssl_title">HTTPS 证书不受信任</string>
+    <string name="error_ssl_detail">已取消访问。如果这是你自己的 DSH 服务器，可以在提示里点「仍然继续」，或改用 http:// 地址。</string>
     <string name="error_invalid_url">请输入有效的 http:// 或 https:// 局域网地址</string>
     <string name="error_webview_title">系统 WebView 不可用</string>
     <string name="error_webview_detail">当前系统没有可用的 Android WebView。请在系统设置中启用 WebView，或更新系统组件后重试。\n\n%1$s</string>
 
     <string name="download_notification">正在从 DSH 下载</string>
+
+    <string name="ssl_dialog_title">证书未通过校验</string>
+    <string name="ssl_dialog_message">%1$s 的 HTTPS 证书没有通过系统校验：%2$s。\n\n继续访问会跳过证书校验，只适合你自己信任的局域网服务器。继续之后，访问该地址不会再提示。\n\n确定要继续吗？</string>
+    <string name="ssl_continue">仍然继续</string>
+    <string name="ssl_reason_not_yet_valid">证书尚未生效</string>
+    <string name="ssl_reason_expired">证书已过期</string>
+    <string name="ssl_reason_mismatch">证书上的域名与访问地址不一致</string>
+    <string name="ssl_reason_untrusted">证书颁发机构不受信任（常见于自签名证书）</string>
+    <string name="ssl_reason_date">证书日期无效</string>
+    <string name="ssl_reason_invalid">证书无效</string>
+    <string name="ssl_reason_unknown">未知的证书错误</string>
+    <string name="settings_clear_ssl_trust">清除已信任的 HTTPS 证书</string>
+    <string name="toast_ssl_trust_cleared">已清除，下次访问会重新提示</string>
 </resources>
