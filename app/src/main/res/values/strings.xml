@@ -68,4 +68,26 @@
     <string name="toast_ssl_scope_main_only">已改为：只提示主页面，子资源自动放行</string>
     <string name="toast_ssl_scope_all">已改为：所有资源的证书错误都会提示</string>
     <string name="toast_ssl_subresource_passed">已自动放行 %1$s 的子资源证书错误</string>
+
+    <string name="scan_lan">扫描局域网</string>
+    <string name="action_stop_scan">停止扫描</string>
+    <string name="scan_starting">正在扫描局域网…</string>
+    <string name="scan_running">正在扫描局域网… %1$d/%2$d</string>
+    <string name="scan_cancelled">扫描已取消</string>
+    <string name="scan_none">没有发现 DSH 服务。请确认 DSH 已经启动，并且手机和电脑连在同一个 Wi-Fi。</string>
+    <string name="scan_found">发现 %1$d 个服务</string>
+    <string name="scan_no_local_address">没有找到 Wi-Fi / 以太网地址，请先连接网络再扫描。</string>
+    <string name="section_discovered">局域网发现</string>
+    <string name="section_saved">最近使用</string>
+    <string name="scan_dsh_like">DSH · %1$s</string>
+    <string name="scan_unconfirmed">可能不是 DSH · %1$s</string>
+    <string name="probe_running">正在连接…</string>
+    <string name="probe_refused">端口没有服务在监听。DSH 可能没启动，或 --host/--port 与这里填的不一致。</string>
+    <string name="probe_timeout">连接超时。请确认地址端口正确，并放行电脑防火墙。</string>
+    <string name="probe_unknown_host">找不到这个主机名，请改用电脑的局域网 IP。</string>
+    <string name="probe_http_error">服务器返回 HTTP %1$d，看起来不是 DSH。</string>
+    <string name="probe_unknown">连接失败：%1$s</string>
+    <string name="remove_server_title">移除这个地址？</string>
+    <string name="remove_server_message">只会从「最近使用」里移除，不影响 DSH 本身。</string>
+    <string name="toast_server_removed">已移除</string>
 </resources>

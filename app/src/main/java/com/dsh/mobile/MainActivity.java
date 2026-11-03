@@ -6,11 +6,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
@@ -39,9 +43,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +72,9 @@ public class MainActivity extends Activity {
     private static final String PREF_BASE_URL = "base_url";
     private static final String PREF_SSL_TRUSTED = "ssl_trusted_authorities";
     private static final String PREF_SSL_MAIN_FRAME_ONLY = "ssl_prompt_main_frame_only";
+    private static final String PREF_SERVERS = "saved_servers";
+    private static final int MAX_SAVED_SERVERS = 8;
+    private static final long AUTO_RETRY_INTERVAL_MS = 5000L;
     private static final String MOBILE_UA_SUFFIX = " DSHMobile/1.0";
 
     private static final int REQ_FILE_CHOOSER = 1001;
@@ -74,6 +85,23 @@ public class MainActivity extends Activity {
     private String baseUrl;
     private String lastPageUrl;
     private String setupFallbackUrl;
+
+    // Setup screen state.
+    private Button connectButton;
+    private Button scanButton;
+    private TextView scanStatus;
+    private LinearLayout serverList;
+    private Button cancelSetupButton;
+    private List<String> savedServers = new ArrayList<>();
+    private final List<ServerDiscovery.Server> discoveredServers = new ArrayList<>();
+    private ServerDiscovery.Scan currentScan;
+    private boolean scanning;
+    private int scanGeneration;
+    private int setupGeneration;
+
+    // Reconnect-on-network-change state.
+    private BroadcastReceiver networkReceiver;
+    private long lastAutoRetryAt;
 
     private WebView webView;
     private FrameLayout webContainer;
@@ -130,22 +158,29 @@ public class MainActivity extends Activity {
     private void showSetup(String initialUrl) {
         cancelPendingWebUi();
         destroyWebView();
+        stopScan(true);
+        setupGeneration++;
         baseUrl = null;
         lastPageUrl = null;
         setupFallbackUrl = TextUtils.isEmpty(initialUrl) ? null : initialUrl;
+        discoveredServers.clear();
+        savedServers = loadSavedServers();
 
         setContentView(R.layout.activity_setup);
         applySystemBars();
 
         final EditText urlInput = findViewById(R.id.edit_url);
-        Button connectButton = findViewById(R.id.btn_connect);
-        Button cancelButton = findViewById(R.id.btn_cancel_setup);
+        connectButton = findViewById(R.id.btn_connect);
+        scanButton = findViewById(R.id.btn_scan);
+        scanStatus = findViewById(R.id.tv_scan_status);
+        serverList = findViewById(R.id.server_list);
+        cancelSetupButton = findViewById(R.id.btn_cancel_setup);
 
         if (!TextUtils.isEmpty(initialUrl)) {
             urlInput.setText(initialUrl);
             urlInput.setSelection(initialUrl.length());
-            cancelButton.setVisibility(View.VISIBLE);
-            cancelButton.setOnClickListener(v -> {
+            cancelSetupButton.setVisibility(View.VISIBLE);
+            cancelSetupButton.setOnClickListener(v -> {
                 if (TextUtils.isEmpty(setupFallbackUrl)) {
                     return;
                 }
@@ -156,6 +191,7 @@ public class MainActivity extends Activity {
 
         View.OnClickListener connectAction = v -> attemptConnect(urlInput);
         connectButton.setOnClickListener(connectAction);
+        scanButton.setOnClickListener(v -> toggleScan());
         urlInput.setOnEditorActionListener((v, actionId, event) -> {
             boolean enter = event != null
                     && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
@@ -166,6 +202,8 @@ public class MainActivity extends Activity {
             }
             return false;
         });
+
+        renderServerList();
     }
 
     private void attemptConnect(EditText urlInput) {
@@ -176,7 +214,7 @@ public class MainActivity extends Activity {
             return;
         }
         hideKeyboard(urlInput);
-        connectTo(normalized);
+        connectWithPrecheck(normalized);
     }
 
     private void hideKeyboard(View view) {
@@ -250,17 +288,382 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------
+    // Discovery, saved servers and pre-connect check
+    // ---------------------------------------------------------------------
+
+    private void toggleScan() {
+        if (scanning) {
+            stopScan(false);
+        } else {
+            startScan();
+        }
+    }
+
+    private void startScan() {
+        List<String> hosts = ServerDiscovery.localHosts();
+        final int generation = ++scanGeneration;
+        if (hosts.isEmpty()) {
+            // No Wi-Fi/Ethernet address: say so instead of starting a scan
+            // that can never finish usefully.
+            scanning = false;
+            if (scanButton != null) {
+                scanButton.setText(R.string.scan_lan);
+            }
+            setScanStatus(getString(R.string.scan_no_local_address));
+            return;
+        }
+
+        scanning = true;
+        discoveredServers.clear();
+        renderServerList();
+        if (scanButton != null) {
+            scanButton.setText(R.string.action_stop_scan);
+        }
+        setScanStatus(getString(R.string.scan_starting));
+
+        currentScan = ServerDiscovery.start(scanPorts(), hosts,
+                new ServerDiscovery.Listener() {
+                    @Override
+                    public void onServerFound(final ServerDiscovery.Server server) {
+                        runOnUiThread(() -> {
+                            if (generation != scanGeneration || !scanning || isFinishing()) {
+                                return;
+                            }
+                            // The same authority can be reached on several
+                            // interfaces; keep one row per host:port.
+                            for (ServerDiscovery.Server known : discoveredServers) {
+                                if (known.authority().equals(server.authority())) {
+                                    return;
+                                }
+                            }
+                            discoveredServers.add(server);
+                            renderServerList();
+                        });
+                    }
+
+                    @Override
+                    public void onProgress(final int scanned, final int total) {
+                        runOnUiThread(() -> {
+                            if (generation == scanGeneration && scanning && scanStatus != null) {
+                                scanStatus.setText(
+                                        getString(R.string.scan_running, scanned, total));
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFinished(final String reason) {
+                        runOnUiThread(() -> {
+                            if (generation != scanGeneration || !scanning) {
+                                return;
+                            }
+                            finishScan(reason);
+                        });
+                    }
+                });
+    }
+
+    private void stopScan(boolean quiet) {
+        ServerDiscovery.Scan scan = currentScan;
+        currentScan = null;
+        scanning = false;
+        scanGeneration++;
+        if (scan != null) {
+            scan.cancel();
+        }
+        if (scanButton != null) {
+            scanButton.setText(R.string.scan_lan);
+        }
+        if (!quiet) {
+            setScanStatus(getString(R.string.scan_cancelled));
+        }
+    }
+
+    private void finishScan(String reason) {
+        scanning = false;
+        currentScan = null;
+        if (scanButton != null) {
+            scanButton.setText(R.string.scan_lan);
+        }
+        if ("no-local-address".equals(reason)) {
+            setScanStatus(getString(R.string.scan_no_local_address));
+            return;
+        }
+        if ("cancelled".equals(reason)) {
+            setScanStatus(getString(R.string.scan_cancelled));
+            return;
+        }
+        if (discoveredServers.isEmpty()) {
+            setScanStatus(getString(R.string.scan_none));
+        } else {
+            setScanStatus(getString(R.string.scan_found, discoveredServers.size()));
+        }
+    }
+
+    private List<Integer> scanPorts() {
+        List<Integer> ports = new ArrayList<>();
+        ports.add(3080);
+        addPortOf(ports, baseUrl);
+        for (String saved : savedServers) {
+            addPortOf(ports, saved);
+        }
+        return ports;
+    }
+
+    private void addPortOf(List<Integer> ports, String url) {
+        if (TextUtils.isEmpty(url)) {
+            return;
+        }
+        try {
+            Uri uri = Uri.parse(url);
+            int port = uri.getPort();
+            if (port > 0 && port <= 65535) {
+                ports.add(port);
+            } else if ("https".equalsIgnoreCase(uri.getScheme())) {
+                ports.add(443);
+            } else if ("http".equalsIgnoreCase(uri.getScheme())) {
+                ports.add(80);
+            }
+        } catch (Exception ignored) {
+            // A malformed saved entry just contributes no port.
+        }
+    }
+
+    private void setScanStatus(String text) {
+        if (scanStatus == null) {
+            return;
+        }
+        if (TextUtils.isEmpty(text)) {
+            scanStatus.setVisibility(View.GONE);
+            return;
+        }
+        scanStatus.setText(text);
+        scanStatus.setVisibility(View.VISIBLE);
+    }
+
+    private void renderServerList() {
+        if (serverList == null) {
+            return;
+        }
+        serverList.removeAllViews();
+        if (!discoveredServers.isEmpty()) {
+            addSectionLabel(getString(R.string.section_discovered));
+            for (ServerDiscovery.Server server : discoveredServers) {
+                String label = server.label();
+                label = getString(server.dshLike
+                        ? R.string.scan_dsh_like
+                        : R.string.scan_unconfirmed, label);
+                addServerRow(label, server.url(), false);
+            }
+        }
+        if (!savedServers.isEmpty()) {
+            addSectionLabel(getString(R.string.section_saved));
+            for (String url : savedServers) {
+                addServerRow(displayOf(url), url, true);
+            }
+        }
+    }
+
+    private void addSectionLabel(String text) {
+        TextView label = new TextView(this);
+        label.setText(text);
+        label.setTextSize(12);
+        label.setTextColor(getColor(R.color.muted));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(10);
+        label.setLayoutParams(params);
+        serverList.addView(label);
+    }
+
+    private void addServerRow(final String label, final String url, final boolean removable) {
+        TextView row = new TextView(this);
+        row.setText(label);
+        row.setTextSize(14);
+        row.setTextColor(getColor(R.color.ink));
+        row.setSingleLine(true);
+        row.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+        row.setBackgroundResource(R.drawable.bg_server_row);
+        row.setClickable(true);
+        int pad = dp(12);
+        row.setPadding(pad, pad, pad, pad);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(8);
+        row.setLayoutParams(params);
+        row.setOnClickListener(v -> connectWithPrecheck(url));
+        if (removable) {
+            row.setOnLongClickListener(v -> {
+                confirmRemoveServer(url);
+                return true;
+            });
+        }
+        serverList.addView(row);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private String displayOf(String url) {
+        try {
+            Uri uri = Uri.parse(url);
+            String authority = uri.getAuthority();
+            if (!TextUtils.isEmpty(authority)) {
+                String path = uri.getPath();
+                if (TextUtils.isEmpty(path) || "/".equals(path)) {
+                    return authority;
+                }
+                return authority + path;
+            }
+        } catch (Exception ignored) {
+            // Fall back to the raw address.
+        }
+        return url;
+    }
+
+    private void confirmRemoveServer(final String url) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.remove_server_title)
+                .setMessage(getString(R.string.remove_server_message)
+                        + "\n\n" + displayOf(url))
+                .setPositiveButton(R.string.clear, (dialog, which) -> {
+                    savedServers.remove(url);
+                    persistSavedServers();
+                    renderServerList();
+                    toast(R.string.toast_server_removed);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private List<String> loadSavedServers() {
+        List<String> result = new ArrayList<>();
+        String raw = prefs.getString(PREF_SERVERS, "");
+        if (TextUtils.isEmpty(raw)) {
+            return result;
+        }
+        try {
+            JSONArray array = new JSONArray(raw);
+            for (int i = 0; i < array.length(); i++) {
+                String value = array.optString(i, "");
+                if (!TextUtils.isEmpty(value)) {
+                    result.add(value);
+                }
+            }
+        } catch (JSONException ignored) {
+            // A corrupt list is not worth crashing over; start empty.
+        }
+        return result;
+    }
+
+    private void persistSavedServers() {
+        JSONArray array = new JSONArray();
+        for (String value : savedServers) {
+            array.put(value);
+        }
+        prefs.edit().putString(PREF_SERVERS, array.toString()).apply();
+    }
+
+    private void rememberServer(String url) {
+        if (TextUtils.isEmpty(url)) {
+            return;
+        }
+        List<String> list = new ArrayList<>(savedServers);
+        list.remove(url);
+        list.add(0, url);
+        while (list.size() > MAX_SAVED_SERVERS) {
+            list.remove(list.size() - 1);
+        }
+        savedServers = list;
+        persistSavedServers();
+    }
+
+    /**
+     * Check the address before handing it to the WebView, so a wrong port or a
+     * stopped server is explained on the setup screen instead of as a blank
+     * error page.
+     */
+    private void connectWithPrecheck(final String url) {
+        if (TextUtils.isEmpty(url)) {
+            return;
+        }
+        if (connectButton != null && !connectButton.isEnabled()) {
+            return;
+        }
+        stopScan(true);
+        final int generation = setupGeneration;
+        setSetupBusy(true);
+        new Thread(() -> {
+            final ServerDiscovery.ProbeResult result = ServerDiscovery.probe(url);
+            runOnUiThread(() -> {
+                if (isFinishing() || generation != setupGeneration) {
+                    return;
+                }
+                setSetupBusy(false);
+                if (result != null && result.isUsable()) {
+                    connectTo(url);
+                } else {
+                    setScanStatus(describeProbe(result));
+                }
+            });
+        }, "dsh-probe").start();
+    }
+
+    private String describeProbe(ServerDiscovery.ProbeResult result) {
+        if (result == null) {
+            return getString(R.string.probe_unknown, "");
+        }
+        switch (result.kind) {
+            case REFUSED:
+                return getString(R.string.probe_refused);
+            case TIMEOUT:
+                return getString(R.string.probe_timeout);
+            case UNKNOWN_HOST:
+                return getString(R.string.probe_unknown_host);
+            case HTTP_ERROR:
+                return getString(R.string.probe_http_error, result.httpCode);
+            default:
+                return getString(R.string.probe_unknown,
+                        result.detail == null ? "" : result.detail);
+        }
+    }
+
+    private void setSetupBusy(boolean busy) {
+        if (connectButton != null) {
+            connectButton.setEnabled(!busy);
+            connectButton.setText(busy ? R.string.probe_running : R.string.connect);
+        }
+        if (scanButton != null) {
+            scanButton.setEnabled(!busy);
+        }
+        if (busy) {
+            setScanStatus(getString(R.string.probe_running));
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // Web screen
     // ---------------------------------------------------------------------
 
     private void connectTo(String url) {
+        stopScan(true);
         baseUrl = url;
         lastPageUrl = url;
         setupFallbackUrl = null;
+        setupGeneration++;
         prefs.edit().putString(PREF_BASE_URL, url).apply();
+        rememberServer(url);
 
         cancelPendingWebUi();
         destroyWebView();
+        connectButton = null;
+        scanButton = null;
+        scanStatus = null;
+        serverList = null;
+        cancelSetupButton = null;
 
         setContentView(R.layout.activity_web);
         applySystemBars();
@@ -517,9 +920,13 @@ public class MainActivity extends Activity {
     }
 
     private String currentPageAuthority(WebView view) {
-        String url = view != null ? view.getUrl() : null;
-        if (TextUtils.isEmpty(url)) {
-            url = lastPageUrl;
+        // lastPageUrl is updated for the page itself (loadUrl, onPageStarted,
+        // main-frame navigation and committed history), while sub-resources do
+        // not touch it. Prefer it over view.getUrl(), which can still point at
+        // the previous page while a new main document is being negotiated.
+        String url = lastPageUrl;
+        if (TextUtils.isEmpty(url) && view != null) {
+            url = view.getUrl();
         }
         if (TextUtils.isEmpty(url)) {
             url = baseUrl;
@@ -840,13 +1247,22 @@ public class MainActivity extends Activity {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return handleUri(request.getUrl());
+            Uri uri = request != null ? request.getUrl() : null;
+            if (request != null && request.isForMainFrame()) {
+                rememberMainFrameUrl(uri);
+            }
+            return handleUri(uri);
         }
 
         @Override
         @SuppressWarnings("deprecation")
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            return handleUri(Uri.parse(url));
+            if (TextUtils.isEmpty(url)) {
+                return true;
+            }
+            Uri uri = Uri.parse(url);
+            rememberMainFrameUrl(uri);
+            return handleUri(uri);
         }
 
         @Override
@@ -966,8 +1382,17 @@ public class MainActivity extends Activity {
         return detail;
     }
 
-    private boolean handleUri(Uri uri) {
+    private void rememberMainFrameUrl(Uri uri) {
         if (uri == null) {
+            return;
+        }
+        String scheme = uri.getScheme();
+        if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+            lastPageUrl = uri.toString();
+        }
+    }
+
+    private boolean handleUri(Uri uri) {        if (uri == null) {
             return true;
         }
         String scheme = uri.getScheme();
@@ -1289,6 +1714,78 @@ public class MainActivity extends Activity {
         errorTitle = null;
         errorDetail = null;
         toolbarTitle = null;
+
+        connectButton = null;
+        scanButton = null;
+        scanStatus = null;
+        serverList = null;
+        cancelSetupButton = null;
+    }
+
+    // ---------------------------------------------------------------------
+    // Reconnect when the network comes back
+    // ---------------------------------------------------------------------
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        registerNetworkReceiver();
+    }
+
+    @Override
+    protected void onStop() {
+        unregisterNetworkReceiver();
+        super.onStop();
+    }
+
+    private void registerNetworkReceiver() {
+        if (networkReceiver != null) {
+            return;
+        }
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (errorView == null || errorView.getVisibility() != View.VISIBLE) {
+                    return;
+                }
+                if (webView == null) {
+                    return;
+                }
+                // CONNECTIVITY_ACTION can arrive in bursts; do not reload the
+                // page more than once every few seconds.
+                long now = System.currentTimeMillis();
+                if (now - lastAutoRetryAt < AUTO_RETRY_INTERVAL_MS) {
+                    return;
+                }
+                lastAutoRetryAt = now;
+                retryPage();
+            }
+        };
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(receiver, filter);
+            }
+            networkReceiver = receiver;
+        } catch (Throwable ignored) {
+            // Some compatibility containers refuse dynamic receivers; the
+            // manual retry button still works.
+            networkReceiver = null;
+        }
+    }
+
+    private void unregisterNetworkReceiver() {
+        if (networkReceiver == null) {
+            return;
+        }
+        try {
+            unregisterReceiver(networkReceiver);
+        } catch (Throwable ignored) {
+            // Already gone.
+        }
+        networkReceiver = null;
     }
 
     @Override
@@ -1310,6 +1807,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        stopScan(true);
+        unregisterNetworkReceiver();
         cancelPendingWebUi();
         destroyWebView();
         super.onDestroy();

@@ -11,3 +11,4 @@
 *.apk
 *.aab
 /dist/
+/tools/out/
